@@ -100,4 +100,42 @@ class Apheleia_Public {
 
 	}
 
+	/**
+	 * Start the process
+	 * 
+	 * @since 	1.0.0
+	 */
+	public function inline_styles() {
+		
+		/**
+		 * Bail out if child theme is active
+		 * 
+		 * (Added to roadmap)
+		 */
+		if ( $this->is_child_theme() ) {
+			return;
+		}
+
+		
+	}
+
+	/**
+	 * Check if child theme is in use
+	 * 
+	 * @since 	1.0.0
+	 */
+	private function is_child_theme() {
+
+		return is_child_theme();
+	}
+
+	/**
+	 * Get the theme stylesheet
+	 * 
+	 * @since	1.0.0
+	 */
+	private function get_theme_styles() {
+
+	}
+
 }
