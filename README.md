@@ -1,3 +1,7 @@
+---
+title: Apheleia WordPress optimisation plugin
+---
+
 # WIP (Do not use)
 
 ### Codename: Apheleia
