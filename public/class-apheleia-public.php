@@ -112,9 +112,8 @@ class Apheleia_Public {
 		 * 
 		 * (Added to roadmap)
 		 */
-		if ( $this->is_child_theme() ) {
+		if ( $this->is_child_theme() )
 			return;
-		}
 
 		
 	}
@@ -134,7 +133,16 @@ class Apheleia_Public {
 	 * 
 	 * @since	1.0.0
 	 */
-	private function get_theme_styles() {
+	private function get_theme_styles_url() {
+
+	}
+
+	/**
+	 * Open and return the contents of stylesheet
+	 * 
+	 * @since 	1.0.0
+	 */
+	private function get_theme_styles_content( $file ) {
 
 	}
 
