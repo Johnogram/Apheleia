@@ -41,6 +41,15 @@ class Apheleia_Admin {
 	private $version;
 
 	/**
+	 * The options name to be used
+	 * 
+	 * @since	1.0.0
+	 * @access 	private
+	 * @var		string		$option_name 	Option name of this plugin
+	 */
+	private $option_name = 'apheleia';
+
+	/**
 	 * Initialize the class and set its properties.
 	 *
 	 * @since    1.0.0
@@ -98,6 +107,40 @@ class Apheleia_Admin {
 
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/apheleia-admin.js', array( 'jquery' ), $this->version, false );
 
+	}
+
+	/**
+	 * Add an options page under the Settings submenu
+	 * 
+	 * @since	1.0.0
+	 */
+	public function add_options_page() {
+
+		$this->plugin_screen_hook_suffix = add_options_page( 
+			__( 'Apheleia Settings', 'apheleia' ), 
+			__( 'Apheleia', 'apheleia' ), 
+			'manage_options', 
+			$this->plugin_name,
+			array( $this, 'display_options_page' )	
+		);
+	}
+
+	/**
+	 * Render the options page for the plugin
+	 * 
+	 * @since	1.0.0
+	 */
+	public function display_options_page() {
+		include_once 'partials/apheleia-admin-display.php';
+	}
+	
+	/**
+	 * Register the settings section
+	 * 
+	 * @since 	1.0.0
+	 */
+	public function register_setting() {
+		
 	}
 
 }
