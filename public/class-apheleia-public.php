@@ -41,6 +41,15 @@ class Apheleia_Public {
 	private $version;
 
 	/**
+	 * Storage for retrieved stylesheets/scripts
+	 * 
+	 * @since	1.0.0
+	 * @access 	private
+	 * @var		array		$data 		Enqueued stylesheets/scripts
+	 */
+	private $data = array();
+
+	/**
 	 * Initialize the class and set its properties.
 	 *
 	 * @since    1.0.0
@@ -105,7 +114,7 @@ class Apheleia_Public {
 	 * 
 	 * @since 	1.0.0
 	 */
-	public function inline_styles() {
+	public function inline_scripts() {
 		
 		/**
 		 * Bail out if child theme is active
@@ -115,23 +124,23 @@ class Apheleia_Public {
 		if ( $this->is_child_theme() )
 			return;
 
+		$scripts = array();
+
 		/**
-		 * Get stylesheets content
-		 * 
-		 * Bail out if stylesheets aren't set
+		 * Bail out if user is logged in
 		 */
-		if ( !$this->get_theme_styles_url() )
+		if ( $this->is_user_logged_in() )
 			return;
 
-		foreach ( $this->get_theme_styles_url() as $key => $file ) {
-			$stylesheets[$key] = $this->get_stylesheet_content( $file );
-		}
-
 		/**
-		 * Output the stylesheet contents
+		 * Is this header or footer?
+		 * 
+		 * Begin process of inlining CSS and dequeue external files
 		 */
-		foreach ( $stylesheets as $key => $stylesheet ) {
-			echo $this->format_inline_css( $key, $stylesheet );
+		if ( ! isset( $this->data['footer'] ) ) { // Header
+			$scripts = $this->get_scripts( $this->data['header'] );
+		} else { // Footer
+			$scripts = $this->get_scripts( $this->data['footer'] );
 		}
 
 	}
@@ -148,35 +157,127 @@ class Apheleia_Public {
 	}
 
 	/**
-	 * Get the theme stylesheet
+	 * Check if user is logged in
 	 * 
-	 * (WILL BECOME ALL ENQUEUE STYLESHEETS)
+	 * @since 	1.0.0
+	 * @access 	private
+	 * @return 	boolean		If user is logged in
+	 */
+	private function is_user_logged_in() {
+		return is_user_logged_in();
+	}
+ 
+	/**
+	 * Get the scripts enqueued on page load
+	 * 
+	 * Inspiration for methods taken from Query Monitor plugin
+	 * https://en-gb.wordpress.org/plugins/query-monitor/
+	 * 
+	 * @since	1.0.0
+	 */
+	public function get_enqueued_header_scripts() {
+
+		global $wp_scripts, $wp_styles;
+
+		/**
+		 * Raw data from page load (wp_head at 999)
+		 */
+		$this->data['raw']['scripts'] = $wp_scripts;
+		$this->data['raw']['styles']  = $wp_styles;
+
+		$this->data['header']['styles'] = $wp_styles->done;
+		$this->data['header']['scripts'] = $wp_scripts->done;
+		
+
+	}
+
+	/**
+	 * Get the scripts enqueued to page footer
+	 * 
+	 * Inspiration for methods taken from Query Monitor plugin
+	 * https://en-gb.wordpress.org/plugins/query-monitor/
+	 * 
+	 * @since	1.0.0
+	 */
+	public function get_enqueued_footer_scripts() {
+
+		global $wp_scripts, $wp_styles;
+
+		if ( empty( $this->data['header'] ) ) {
+			return;
+		}
+
+		/**
+		 * Overwrite raw data from page footer (wp_print_footer_scripts at 999)
+		 */
+		$this->data['raw']['scripts'] = $wp_scripts;
+		$this->data['raw']['styles']  = $wp_styles;
+
+		$this->data['footer']['scripts'] = array_diff( $wp_scripts->done, $this->data['header']['scripts'] );
+		$this->data['footer']['styles']  = array_diff( $wp_styles->done, $this->data['header']['styles'] );
+
+	}
+
+	/**
+	 * Get the scripts
 	 * 
 	 * @since	1.0.0
 	 * @access 	private
-	 * @return	string		$stylesheet_url		The stylesheets URL
+	 * @param 	array		$scripts		The array of enqueued scripts
 	 */
-	private function get_theme_styles_url() {
+	private function get_scripts( $scripts ) {
 
-		$stylesheet_url['theme'] = get_stylesheet_uri();
-		// return array for future proofing
-		return $stylesheet_url;
+		// TO DO: CHECK FOR BROKEN AND MISSING DEPENDANCIES
+
+		/**
+		 * Bail out if no data
+		 */
+		if ( ! isset( $this->data['raw'] ) ) {
+			return;
+		}
+
+		/**
+		 *  Get all styles
+		 */
+		foreach ( $scripts['styles'] as $handle ) {
+
+			if ( $handle == 'twentyseventeen-ie8' )
+				return;
+
+			$style_url = $raw_data = $this->data['raw']['styles']->registered[$handle]->src;
+
+			// To Do: Add in hook/action to allow prevention of this
+			
+			/**
+			 * Get stylesheet content
+			 */
+			$style_content = $this->get_stylesheet_content( $style_url );
+
+			/**
+			 * Inline the content
+			 */
+			$style_inline = $this->format_inline_css( $handle, $style_content );
+			echo $style_inline;
+
+			/**
+			 * Dequeue the external stylesheet
+			 */
+			$this->dequeue_stylesheets( $handle );
+
+		}
 
 	}
 
 	/**
 	 * Dequeue the stylesheets
 	 * 
-	 * (HARDCODED FOR NOW)
-	 * 
 	 * @since	1.0.0
+	 * @param 	string		$handle		The handle of the stylesheet
 	 */
-	public function dequeue_stylesheets() {
+	public function dequeue_stylesheets( $handle ) {
 
-		wp_dequeue_style( 'twentyseventeen-style' );
-		wp_deregister_style( 'twentyseventeen-style' );
-		wp_dequeue_style( 'twentyseventeen-ie8' );
-		wp_deregister_style( 'twentyseventeen-ie8' );
+		wp_dequeue_style( $handle );
+		wp_deregister_style( $handle );
 
 	}
 
@@ -202,7 +303,7 @@ class Apheleia_Public {
 		$replace = array(
 			"#/\*.*?\*/#s" 		=> "",  // Strip C style comments.
 			"#\s\s+#"      		=> " ", // Strip excess whitespace.
-			"/[\r|\n|\t|\r\n]/"	=> "", // Strip new lines, tabs, etc...
+			"/[\r|\n|\t|\r\n]/"	=> "",  // Strip new lines, tabs, etc...
 		);
 		$search = array_keys($replace);
 		$file_contents = preg_replace($search, $replace, $file_contents);
@@ -234,13 +335,13 @@ class Apheleia_Public {
 	 * @param 	string		$css			The raw CSS to be inlined
 	 * @return 	string 		$inline_css 	The inline HTML to be output
 	 */
-	private function format_inline_css( $key, $css ) {
+	private function format_inline_css( $handle, $css ) {
 
-		$inline_css  = "<!-- Apheleia: $key -->\r\n";
+		$inline_css  = "<!-- Apheleia: $handle -->\r\n";
 		$inline_css .= "<style type=\"text/css\">\r\n";
 		$inline_css .= $css;
 		$inline_css .= "</style>\r\n";
-		$inline_css .= "<!--/Apheleia: $key -->\r\n";
+		$inline_css .= "<!--/Apheleia: $handle -->\r\n";
 
 		return $inline_css;
 
