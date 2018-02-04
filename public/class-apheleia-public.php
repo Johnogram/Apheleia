@@ -130,8 +130,8 @@ class Apheleia_Public {
 		/**
 		 * Output the stylesheet contents
 		 */
-		foreach ( $stylesheets as $stylesheet ) {
-			echo $this->format_inline_css( $stylesheet );
+		foreach ( $stylesheets as $key => $stylesheet ) {
+			echo $this->format_inline_css( $key, $stylesheet );
 		}
 
 	}
@@ -230,14 +230,17 @@ class Apheleia_Public {
 	 * 
 	 * @since	1.0.0
 	 * @access 	private
+	 * @param	string		$key 			The name of the stylesheet
 	 * @param 	string		$css			The raw CSS to be inlined
 	 * @return 	string 		$inline_css 	The inline HTML to be output
 	 */
-	private function format_inline_css( $css ) {
+	private function format_inline_css( $key, $css ) {
 
-		$inline_css = '<style type="text/css">';
+		$inline_css  = "<!-- Apheleia: $key -->\r\n";
+		$inline_css .= "<style type=\"text/css\">\r\n";
 		$inline_css .= $css;
-		$inline_css .= '</style>';
+		$inline_css .= "</style>\r\n";
+		$inline_css .= "<!--/Apheleia: $key -->\r\n";
 
 		return $inline_css;
 
